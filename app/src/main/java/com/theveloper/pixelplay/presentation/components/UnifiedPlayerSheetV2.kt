@@ -699,6 +699,11 @@ fun UnifiedPlayerSheetV2(
                                 shape = sheetInteractionState.playerShadowShape
                             )
                             .clip(sheetInteractionState.playerShadowShape)
+                            .glassBackdrop(
+                                tint = playerAreaBackground.copy(alpha = 0.58f),
+                                radius = 28.dp,
+                                enabled = currentSheetContentState == PlayerSheetState.COLLAPSED
+                            )
                             // innerLayout:
                             // Measures the actual player content with full screen height targetContentHeightPx
                             // so that it can render correctly, while reporting targetHeightPx to the outer

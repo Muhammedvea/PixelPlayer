@@ -257,6 +257,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.foundation)
+    implementation(libs.haze)
     implementation(libs.androidx.animation)
     implementation(libs.androidx.palette.ktx)
     implementation(libs.androidx.core.splashscreen)

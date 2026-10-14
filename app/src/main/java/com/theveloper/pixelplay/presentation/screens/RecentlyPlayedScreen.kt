@@ -49,6 +49,10 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
+import com.theveloper.pixelplay.presentation.components.glassBackdropWith
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -175,6 +179,7 @@ fun RecentlyPlayedScreen(
         )
     }
 
+    val screenHaze = rememberHazeState()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -190,7 +195,7 @@ fun RecentlyPlayedScreen(
         } else {
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().hazeSource(state = screenHaze),
                 contentPadding = PaddingValues(
                     bottom = MiniPlayerHeight + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp
                 ),
@@ -352,13 +357,21 @@ fun RecentlyPlayedScreen(
         FilledIconButton(
             onClick = { navController.popBackStack() },
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = if (LocalHazeState.current != null) {
+                    androidx.compose.ui.graphics.Color.Transparent
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
                 contentColor = MaterialTheme.colorScheme.onSurface
             ),
             modifier = Modifier
                 .statusBarsPadding()
                 .padding(start = 10.dp, top = 8.dp)
                 .clip(CircleShape)
+                .glassBackdropWith(
+                    state = screenHaze,
+                    tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                )
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,

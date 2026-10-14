@@ -63,6 +63,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
+import com.theveloper.pixelplay.presentation.components.glassBackdropWith
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -150,6 +154,7 @@ fun WordDelimiterConfigScreen(
         }
     }
 
+    val screenHaze = rememberHazeState()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -160,7 +165,7 @@ fun WordDelimiterConfigScreen(
 
         LazyColumn(
             state = lazyListState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().hazeSource(state = screenHaze),
             contentPadding = PaddingValues(top = currentTopBarHeightDp + 8.dp, start = 16.dp, end = 16.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -353,6 +358,7 @@ fun WordDelimiterConfigScreen(
         CollapsibleCommonTopBar(
             title = stringResource(R.string.word_delimiters_screen_title),
             collapseFraction = collapseFraction,
+            hazeState = if (LocalHazeState.current != null) screenHaze else null,
             headerHeight = currentTopBarHeightDp,
             onBackClick = { navController.popBackStack() },
             actions = {

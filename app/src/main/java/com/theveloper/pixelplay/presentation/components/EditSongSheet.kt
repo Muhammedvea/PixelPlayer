@@ -179,6 +179,8 @@ private fun EditSongContent(
     var pendingCoverArtUri by remember { mutableStateOf<Uri?>(null) }
 
     var showInfoDialog by remember { mutableStateOf(false) }
+    var isFetchingDeezerCover by remember { mutableStateOf(false) }
+    val deezerScope = rememberCoroutineScope()
     val context = LocalContext.current
     val pickCoverArtLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -339,6 +341,33 @@ private fun EditSongContent(
                     albumArtUri = song.albumArtUriString,
                     preview = coverArtPreview,
                     isDeleted = isCoverArtDeleted,
+                    isFetchingFromDeezer = isFetchingDeezerCover,
+                    onFetchFromDeezer = {
+                        if (!isFetchingDeezerCover) {
+                            isFetchingDeezerCover = true
+                            deezerScope.launch {
+                                val bytes = com.theveloper.pixelplay.data.network.deezer.DeezerCoverFetcher
+                                    .fetchCover(artist, title, album)
+                                val bitmap = bytes?.let {
+                                    withContext(Dispatchers.Default) {
+                                        android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size)
+                                    }
+                                }
+                                if (bytes != null && bitmap != null) {
+                                    coverArtPreview = bitmap.asImageBitmap()
+                                    editedCoverArt = CoverArtUpdate(bytes, "image/jpeg")
+                                    isCoverArtDeleted = false
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Deezer-d\u0259 \u015f\u0259kil tap\u0131lmad\u0131",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                isFetchingDeezerCover = false
+                            }
+                        }
+                    },
                     onPickNewArt = {
                         pickCoverArtLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -703,6 +732,8 @@ private fun CoverArtEditorCard(
     albumArtUri: String?,
     preview: ImageBitmap?,
     isDeleted: Boolean,
+    isFetchingFromDeezer: Boolean,
+    onFetchFromDeezer: () -> Unit,
     onPickNewArt: () -> Unit,
     onDelete: () -> Unit,
     onReset: () -> Unit,
@@ -817,6 +848,19 @@ private fun CoverArtEditorCard(
                     Icon(Icons.Rounded.Image, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.edit_song_action_change_cover), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+
+                FilledTonalButton(onClick = onFetchFromDeezer, enabled = !isFetchingFromDeezer) {
+                    if (isFetchingFromDeezer) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Rounded.Image, contentDescription = null)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Fetch from Deezer", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 if (preview != null || isDeleted) {

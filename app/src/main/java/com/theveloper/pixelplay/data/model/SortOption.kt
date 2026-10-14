@@ -118,6 +118,13 @@ sealed class SortOption(
         direction = SortDirection.Ascending
     )
 
+    // Manual (user drag-and-drop) order for the Songs tab. Order itself lives in SharedPreferences.
+    object SongManualOrder : SortOption(
+        storageKey = "song_manual_order",
+        displayName = "Manual Order",
+        displayNameRes = R.string.sort_display_manual_order
+    )
+
     // Album Sort Options
     object AlbumTitleAZ : SortOption(
         storageKey = "album_title_az",
@@ -442,7 +449,8 @@ sealed class SortOption(
                 SongDateAdded,
                 SongDateAddedAsc,
                 SongDuration,
-                SongDurationAsc
+                SongDurationAsc,
+                SongManualOrder
             )
         }
 

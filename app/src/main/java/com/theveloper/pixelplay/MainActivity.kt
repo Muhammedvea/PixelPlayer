@@ -119,6 +119,10 @@ import com.theveloper.pixelplay.presentation.components.AppSidebarDrawer
 import com.theveloper.pixelplay.presentation.components.CrashReportDialog
 import com.theveloper.pixelplay.presentation.components.DismissUndoBar
 import com.theveloper.pixelplay.presentation.components.DrawerDestination
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
+import com.theveloper.pixelplay.presentation.components.glassBackdrop
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import com.theveloper.pixelplay.presentation.components.MiniPlayerBottomSpacer
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
 import com.theveloper.pixelplay.presentation.components.PlayerInternalNavigationBar
@@ -773,9 +777,11 @@ class MainActivity : ComponentActivity() {
             userPreferencesRepository.clearDeprecatedPlayerSheetPreference()
         }
 
+        val hazeState = rememberHazeState()
         CompositionLocalProvider(
             LocalAppHapticsConfig provides appHapticsConfig,
-            LocalHapticFeedback provides scopedHapticFeedback
+            LocalHapticFeedback provides scopedHapticFeedback,
+            LocalHazeState provides (if (disableBlurAllOver) null else hazeState)
         ) {
             AppSidebarDrawer(
                 drawerState = drawerState,
@@ -892,8 +898,16 @@ class MainActivity : ComponentActivity() {
                                         shape = navBarShapeCache.get(this, topDp.toPx(), bottomDp.toPx(), useSmoothCorners)
                                         clip = true
                                         shadowElevation = navBarElevationPx
-                                    },
-                                color = NavigationBarDefaults.containerColor
+                                    }
+                                    .glassBackdrop(
+                                        tint = NavigationBarDefaults.containerColor.copy(alpha = 0.55f),
+                                        radius = 28.dp
+                                    ),
+                                color = if (LocalHazeState.current != null) {
+                                    androidx.compose.ui.graphics.Color.Transparent
+                                } else {
+                                    NavigationBarDefaults.containerColor
+                                }
                             ) {
                                 PlayerInternalNavigationBar(
                                     navController = navController,
@@ -964,6 +978,9 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 }
+                                .then(
+                                    if (disableBlurAllOver) Modifier else Modifier.hazeSource(state = hazeState)
+                                )
                         ) {
                             AppNavigation(
                                 playerViewModel = playerViewModel,

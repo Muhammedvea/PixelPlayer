@@ -30,7 +30,8 @@ enum class LibraryTabId(
             SortOption.SongDateAdded,
             SortOption.SongDateAddedAsc,
             SortOption.SongDuration,
-            SortOption.SongDurationAsc
+            SortOption.SongDurationAsc,
+            SortOption.SongManualOrder
         )
     ),
     Albums(

@@ -41,6 +41,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
+import com.theveloper.pixelplay.presentation.components.glassBackdropWith
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -296,6 +300,7 @@ fun GenreDetailScreen(
         )
     }
 
+    val screenHaze = rememberHazeState()
     MaterialTheme(colorScheme = genreColorScheme) {
         Box(
             modifier = Modifier
@@ -319,6 +324,7 @@ fun GenreDetailScreen(
                 ),
                 modifier = Modifier
                     .fillMaxSize()
+                    .hazeSource(state = screenHaze)
                     .offset {
                         // Offset the entire list down by the current "expansion" of the top bar
                         val extraHeight = (topBarHeight.value - minTopBarHeightPx).roundToInt()
@@ -416,7 +422,8 @@ fun GenreDetailScreen(
                 startColor = startColor,
                 contentColor = contentColor,
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                collapsedContentColor = MaterialTheme.colorScheme.onSurface
+                collapsedContentColor = MaterialTheme.colorScheme.onSurface,
+                hazeState = if (LocalHazeState.current != null) screenHaze else null
             )
         
             // Selection Count Pill (Top-Center below collapsed top bar)
@@ -766,7 +773,8 @@ fun GenreCollapsibleTopBar(
     startColor: Color,
     containerColor: Color,
     contentColor: Color,
-    collapsedContentColor: Color
+    collapsedContentColor: Color,
+    hazeState: dev.chrisbanes.haze.HazeState? = null
 ) {
     val solidAlpha = (collapseFraction * 2f).coerceIn(0f, 1f)
     val animatedContentColor = androidx.compose.ui.graphics.lerp(
@@ -794,10 +802,15 @@ fun GenreCollapsibleTopBar(
             .height(headerHeight)
             .zIndex(5f)
     ) {
+        val glassOn = hazeState != null && collapseFraction > 0.35f
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(containerColor.copy(alpha = solidAlpha)) 
+                .glassBackdropWith(
+                    state = if (glassOn) hazeState else null,
+                    tint = containerColor.copy(alpha = 0.6f)
+                )
+                .background(if (glassOn) Color.Transparent else containerColor.copy(alpha = solidAlpha))
         )
         Box(
             modifier = Modifier

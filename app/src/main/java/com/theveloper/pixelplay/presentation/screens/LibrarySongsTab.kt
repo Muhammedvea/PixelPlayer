@@ -136,8 +136,9 @@ fun LibrarySongsTab(
     }
 
     // New action just triggers the ViewModel request
-    val locateCurrentSongAction: (() -> Unit)? = remember(currentSongId) {
-        if (currentSongId == null) {
+    val isManualOrder = sortOption == SortOption.SongManualOrder
+    val locateCurrentSongAction: (() -> Unit)? = remember(currentSongId, isManualOrder) {
+        if (currentSongId == null || isManualOrder) {
             null
         } else {
             {
@@ -177,9 +178,10 @@ fun LibrarySongsTab(
     // - If visible -> Hide button
     // - If not visible -> Show button
 
-    LaunchedEffect(currentSongListIndex, songs.itemCount, isLoading, listState, currentSongId) {
+    LaunchedEffect(currentSongListIndex, songs.itemCount, isLoading, listState, currentSongId, isManualOrder) {
+        // Manual order uses its own non-paged list; the locate button does not apply there
         // If list is empty or loading, hide button
-        if (songs.itemCount == 0 || isLoading) {
+        if (isManualOrder || songs.itemCount == 0 || isLoading) {
             visibilityCallback(false)
             return@LaunchedEffect
         }
@@ -277,6 +279,16 @@ fun LibrarySongsTab(
                 tabId = LibraryTabId.SONGS,
                 storageFilter = storageFilter,
                 bottomBarHeight = bottomBarHeight
+            )
+        }
+        isManualOrder -> {
+            val manualOrderSongs by playerViewModel.allSongsFlow.collectAsStateWithLifecycle()
+            LibraryManualOrderSongsList(
+                songs = manualOrderSongs,
+                playerViewModel = playerViewModel,
+                bottomBarHeight = bottomBarHeight,
+                onMoreOptionsClick = onMoreOptionsClick,
+                hasCurrentSong = hasCurrentSong
             )
         }
         else -> {

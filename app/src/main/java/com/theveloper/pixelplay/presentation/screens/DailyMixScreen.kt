@@ -43,6 +43,10 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
+import com.theveloper.pixelplay.presentation.components.glassBackdropWith
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -248,6 +252,7 @@ fun DailyMixScreen(
     }
 
 
+    val screenHaze = rememberHazeState()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -263,7 +268,7 @@ fun DailyMixScreen(
         } else {
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().hazeSource(state = screenHaze),
                 contentPadding = PaddingValues(bottom = MiniPlayerHeight + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -369,13 +374,21 @@ fun DailyMixScreen(
         FilledIconButton(
             onClick = { navController.popBackStack() },
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = if (LocalHazeState.current != null) {
+                    Color.Transparent
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
                 contentColor = MaterialTheme.colorScheme.onSurface
             ),
             modifier = Modifier
                 .statusBarsPadding()
                 .padding(start = 10.dp, top = 8.dp)
                 .clip(CircleShape)
+                .glassBackdropWith(
+                    state = screenHaze,
+                    tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                )
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,

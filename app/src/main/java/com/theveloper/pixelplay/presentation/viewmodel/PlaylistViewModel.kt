@@ -1,6 +1,7 @@
 package com.theveloper.pixelplay.presentation.viewmodel
 
 import android.net.Uri
+import org.json.JSONArray
 import android.util.Log
 import android.content.Intent
 import android.widget.Toast
@@ -207,11 +208,21 @@ class PlaylistViewModel @Inject constructor(
                             songIds = songsList.map { it.id }
                         )
 
+                        val savedFolderOrder = loadFolderSongOrder(playlistId)
                         _uiState.update {
+                            val sortedFolderSongs = applySortToSongs(songsList, it.currentPlaylistSongsSortOption)
                             it.copy(
                                 currentPlaylistDetails = pseudoPlaylist,
-                                currentPlaylistSongs = applySortToSongs(songsList, it.currentPlaylistSongsSortOption),
-                                playlistSongsOrderMode = PlaylistSongsOrderMode.Sorted(it.currentPlaylistSongsSortOption),
+                                currentPlaylistSongs = if (savedFolderOrder.isEmpty()) {
+                                    sortedFolderSongs
+                                } else {
+                                    applySavedFolderOrder(sortedFolderSongs, savedFolderOrder)
+                                },
+                                playlistSongsOrderMode = if (savedFolderOrder.isEmpty()) {
+                                    PlaylistSongsOrderMode.Sorted(it.currentPlaylistSongsSortOption)
+                                } else {
+                                    PlaylistSongsOrderMode.Manual
+                                },
                                 isLoading = false,
                                 playlistNotFound = false
                             )
@@ -700,7 +711,23 @@ class PlaylistViewModel @Inject constructor(
     }
 
     fun reorderSongsInPlaylist(playlistId: String, fromIndex: Int, toIndex: Int) {
-        if (isFolderPlaylistId(playlistId)) return
+        if (isFolderPlaylistId(playlistId)) {
+            // Folder "playlists" are not stored in the playlist DB; keep their manual order locally.
+            val folderSongs = _uiState.value.currentPlaylistSongs.toMutableList()
+            if (fromIndex in folderSongs.indices && toIndex in folderSongs.indices) {
+                val moved = folderSongs.removeAt(fromIndex)
+                folderSongs.add(toIndex, moved)
+                saveFolderSongOrder(playlistId, folderSongs.map { it.id })
+                _uiState.update {
+                    it.copy(
+                        currentPlaylistSongs = folderSongs,
+                        playlistSongsOrderMode = PlaylistSongsOrderMode.Manual,
+                        playlistOrderModes = it.playlistOrderModes + (playlistId to PlaylistSongsOrderMode.Manual)
+                    )
+                }
+            }
+            return
+        }
         viewModelScope.launch {
             val currentSongs = _uiState.value.currentPlaylistSongs.toMutableList()
             if (fromIndex in currentSongs.indices && toIndex in currentSongs.indices) {
@@ -722,6 +749,38 @@ class PlaylistViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    // --- Manual song order for folder "playlists" (kept in SharedPreferences, keyed by folder playlist id) ---
+    private val folderOrderPrefs by lazy {
+        context.getSharedPreferences("folder_song_orders", Context.MODE_PRIVATE)
+    }
+
+    private fun loadFolderSongOrder(playlistId: String): List<String> {
+        val raw = folderOrderPrefs.getString(playlistId, null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            List(arr.length()) { arr.getString(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveFolderSongOrder(playlistId: String, orderedIds: List<String>) {
+        val arr = JSONArray()
+        orderedIds.forEach { arr.put(it) }
+        folderOrderPrefs.edit().putString(playlistId, arr.toString()).apply()
+    }
+
+    private fun clearFolderSongOrder(playlistId: String) {
+        folderOrderPrefs.edit().remove(playlistId).apply()
+    }
+
+    private fun applySavedFolderOrder(songs: List<Song>, savedIds: List<String>): List<Song> {
+        val byId = songs.associateBy { it.id }
+        val ordered = savedIds.mapNotNull { byId[it] }
+        val orderedIds = ordered.map { it.id }.toSet()
+        return ordered + songs.filter { it.id !in orderedIds }
     }
 
     //Sort funs
@@ -753,6 +812,10 @@ class PlaylistViewModel @Inject constructor(
 
     fun sortPlaylistSongs(sortOption: SortOption) {
         val playlistId = _uiState.value.currentPlaylistDetails?.id
+        if (playlistId != null && isFolderPlaylistId(playlistId)) {
+            // Choosing a sort option replaces the folder's manual order.
+            clearFolderSongOrder(playlistId)
+        }
 
         // If SongDefaultOrder is selected, reload the playlist to get original order
         if (sortOption == SortOption.SongDefaultOrder) {

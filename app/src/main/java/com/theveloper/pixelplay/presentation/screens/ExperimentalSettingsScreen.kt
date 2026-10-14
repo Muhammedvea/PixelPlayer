@@ -66,6 +66,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -164,6 +167,7 @@ fun ExperimentalSettingsScreen(
         }
     }
 
+    val screenHaze = rememberHazeState()
     Box(
         modifier = Modifier
             .nestedScroll(nestedScrollConnection)
@@ -178,7 +182,7 @@ fun ExperimentalSettingsScreen(
         LazyColumn(
             state = lazyListState,
             contentPadding = PaddingValues(top = currentTopBarHeightDp + 8.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().hazeSource(state = screenHaze)
         ) {
             item(key = "player_ui_tweaks_section") {
                 SettingsSection(
@@ -799,6 +803,7 @@ fun ExperimentalSettingsScreen(
         CollapsibleCommonTopBar(
             title = stringResource(R.string.settings_exp_screen_title),
             collapseFraction = collapseFraction,
+            hazeState = if (LocalHazeState.current != null) screenHaze else null,
             headerHeight = currentTopBarHeightDp,
             onBackClick = onNavigationIconClick
         )

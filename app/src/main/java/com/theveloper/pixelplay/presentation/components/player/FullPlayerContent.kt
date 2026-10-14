@@ -1221,7 +1221,10 @@ private fun FullPlayerProgressSection(
     } else {
         song.mimeType
     }
-    val audioBitrate = if (isMetadataForCurrentSong) {
+    val losslessBitrate = remember(song.id, song.path, song.duration) {
+        com.theveloper.pixelplay.utils.LosslessBitrate.estimate(song.path, song.duration)
+    }
+    val audioBitrate = losslessBitrate ?: if (isMetadataForCurrentSong) {
         playbackMetadataBitrate ?: song.bitrate
     } else {
         song.bitrate

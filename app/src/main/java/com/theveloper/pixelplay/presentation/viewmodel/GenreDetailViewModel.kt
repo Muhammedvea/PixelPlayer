@@ -158,8 +158,11 @@ class GenreDetailViewModel @Inject constructor(
 
                     val sections = buildDisplaySections(songs, SortOption.ARTIST)
                     val flattened = flattenSections(sections, artistMap)
-                    val sorted = songs.sortedBy { it.artist ?: "Unknown Artist" }
-                    
+                    // Queue follows exactly the order shown on screen.
+                    val sorted = flattened
+                        .filterIsInstance<GenreDetailListItem.SongItem>()
+                        .map { it.song }
+
                     ProcessingResult(genre, songs, sorted, sections, flattened)
                 }
 
@@ -194,11 +197,10 @@ class GenreDetailViewModel @Inject constructor(
             val (updatedSections, updatedFlattened, updatedSorted) = withContext(Dispatchers.Default) {
                 val sections = buildDisplaySections(currentState.songs, newSort)
                 val flattened = flattenSections(sections, artistMap)
-                val sorted = when (newSort) {
-                    SortOption.ARTIST -> currentState.songs.sortedBy { it.artist ?: "Unknown Artist" }
-                    SortOption.ALBUM -> currentState.songs.sortedBy { it.album ?: "Unknown Album" }
-                    SortOption.TITLE -> currentState.songs.sortedBy { it.title }
-                }
+                // Queue follows exactly the order shown on screen.
+                val sorted = flattened
+                    .filterIsInstance<GenreDetailListItem.SongItem>()
+                    .map { it.song }
                 Triple(sections, flattened, sorted)
             }
             _uiState.value = currentState.copy(

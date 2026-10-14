@@ -194,7 +194,8 @@ fun PlaylistDetailScreen(
 
     var showAddSongsSheet by remember { mutableStateOf(false) }
 
-    var isReorderModeEnabled by remember { mutableStateOf(false) }
+    // Folder lists have no action buttons, so drag handles are always available there.
+    var isReorderModeEnabled by remember(isFolderPlaylist) { mutableStateOf(isFolderPlaylist) }
     var isRemoveModeEnabled by remember { mutableStateOf(false) }
     var showSongInfoBottomSheet by remember { mutableStateOf(false) }
     var showPlaylistOptionsSheet by remember { mutableStateOf(false) }
@@ -246,13 +247,10 @@ fun PlaylistDetailScreen(
     )
 
     LaunchedEffect(reorderableState.isAnyItemDragging, isFolderPlaylist) {
-        if (!isFolderPlaylist && !reorderableState.isAnyItemDragging && lastMovedFrom != null && lastMovedTo != null) {
+        if (!reorderableState.isAnyItemDragging && lastMovedFrom != null && lastMovedTo != null) {
             currentPlaylist?.let {
                 playlistViewModel.reorderSongsInPlaylist(it.id, lastMovedFrom!!, lastMovedTo!!)
             }
-            lastMovedFrom = null
-            lastMovedTo = null
-        } else if (isFolderPlaylist && !reorderableState.isAnyItemDragging) {
             lastMovedFrom = null
             lastMovedTo = null
         }

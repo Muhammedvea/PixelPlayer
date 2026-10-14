@@ -66,6 +66,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import com.theveloper.pixelplay.presentation.components.LocalHazeState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -167,12 +170,13 @@ fun AccountsScreen(
         }
     }
 
+    val screenHaze = rememberHazeState()
     Box(modifier = Modifier.nestedScroll(nestedScrollConnection).fillMaxSize()) {
         val currentTopBarHeightDp = with(density) { topBarHeight.value.toDp() }
 
         LazyColumn(
             state = lazyListState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().hazeSource(state = screenHaze),
             contentPadding = PaddingValues(
                 top = currentTopBarHeightDp + 8.dp,
                 start = 16.dp,
@@ -253,6 +257,7 @@ fun AccountsScreen(
         CollapsibleCommonTopBar(
             title = stringResource(R.string.settings_category_accounts_title),
             collapseFraction = collapseFraction,
+            hazeState = if (LocalHazeState.current != null) screenHaze else null,
             headerHeight = currentTopBarHeightDp,
             onBackClick = onBackClick,
             expandedTitleStartPadding = 20.dp,

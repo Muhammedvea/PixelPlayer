@@ -137,7 +137,8 @@ class SongInfoBottomSheetViewModel @Inject constructor(
                 filePath = song.path,
                 deepScan = false
             )
-            _audioMeta.value = meta
+            val lossless = com.theveloper.pixelplay.utils.LosslessBitrate.estimate(song.path, song.duration)
+            _audioMeta.value = if (lossless != null) meta.copy(bitrate = lossless) else meta
         }
     }
 

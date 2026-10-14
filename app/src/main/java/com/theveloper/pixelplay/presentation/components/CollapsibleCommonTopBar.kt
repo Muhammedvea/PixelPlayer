@@ -1,5 +1,7 @@
 package com.theveloper.pixelplay.presentation.components
 
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
@@ -57,6 +59,7 @@ fun CollapsibleCommonTopBar(
     titleMinWidthAxis: Float = 78f,
     syncStatusBarWithContainer: Boolean = true,
     supportingContent: (@Composable () -> Unit)? = null,
+    hazeState: dev.chrisbanes.haze.HazeState? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     // Logic from GenreDetailScreen:
@@ -74,11 +77,24 @@ fun CollapsibleCommonTopBar(
     // GenreDetail interpolates content color, but for standard screens onSurface is usually correct for both states 
     // (transparent surface vs surfaceContainer).
     
+    // Frosted glass once the header has collapsed over the scrolling list.
+    val glassOn = hazeState != null && collapseFraction > 0.35f
+    val glassTint = (containerColor ?: MaterialTheme.colorScheme.surfaceContainerHigh).copy(alpha = 0.6f)
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(headerHeight)
-            .background(backgroundColor)
+            .then(
+                if (glassOn && hazeState != null) {
+                    Modifier.hazeEffect(state = hazeState) {
+                        blurRadius = 24.dp
+                        tints = listOf(HazeTint(glassTint))
+                    }
+                } else {
+                    Modifier
+                }
+            )
+            .background(if (glassOn) Color.Transparent else backgroundColor)
             .zIndex(5f)
     ) {
         Box(
